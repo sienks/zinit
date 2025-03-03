@@ -416,17 +416,24 @@ builtin source "${ZINIT[BIN_DIR]}/zinit-side.zsh" || {
             case ${ICE[proto]} in
                 (|ftp(|s)|git|http(|s)|rsync|ssh)
                     :zinit-git-clone() {
+                        local repo_url
+                        if [[ ${ICE[proto]} == "ssh" ]]; then
+                            repo_url="git@${site:-${ICE[from]:-github.com}}:$remote_url_path.git"
+                        else
+                            repo_url="${ICE[proto]:-https}://${site:-${ICE[from]:-github.com}}/$remote_url_path"
+                        fi
+                        
                         command git clone --progress ${(s: :)ICE[cloneopts]---recursive} \
                             ${(s: :)ICE[depth]:+--depth ${ICE[depth]}} \
-                            "${ICE[proto]:-https}://${site:-${ICE[from]:-github.com}}/$remote_url_path" \
+                            "$repo_url" \
                             "$local_path" \
                             --config transfer.fsckobjects=false \
                             --config receive.fsckobjects=false \
                             --config fetch.fsckobjects=false \
                             --config pull.rebase=false
-                            integer retval=$?
-                            unfunction :zinit-git-clone
-                            return $retval
+                        integer retval=$?
+                        unfunction :zinit-git-clone
+                        return $retval
                     }
                     :zinit-git-clone |& { command ${ZINIT[BIN_DIR]}/share/git-process-output.zsh || cat; }
                     if (( pipestatus[1] == 141 )) {
@@ -1930,7 +1937,7 @@ zicp() {
     if [[ $1 = (-d|--dir)  ]] { dir=$2; shift 2; }
 
     local arg
-    arg=${${(j: :)@}//(#b)(([[:space:]]~ )#(([^[:space:]]| )##)([[:space:]]~ )#(#B)(->|=>|→)(#B)([[:space:]]~ )#(#b)(([^[:space:]]| )##)|(#B)([[:space:]]~ )#(#b)(([^[:space:]]| )##))/${match[3]:+$match[3] $match[6]\;}${match[8]:+$match[8] $match[8]\;}}
+    arg=${${(j: :)@}//(#b)(([[:space:]]~  )#(([^[:space:]]|  )##)([[:space:]]~  )#(#B)(->|=>|→)(#B)([[:space:]]~  )#(#b)(([^[:space:]]|  )##)|(#B)([[:space:]]~  )#(#b)(([^[:space:]]|  )##))/${match[3]:+$match[3] $match[6]\;}${match[8]:+$match[8] $match[8]\;}}
 
     (
         if [[ -n $dir ]] { cd $dir || return 1; }
@@ -1938,7 +1945,7 @@ zicp() {
         integer retval
         for a b ( "${(s: :)${${(@s.;.)${arg%\;}}:-* .}}" ) {
             for var ( a b ) {
-                : ${(P)var::=${(P)var//(#b)(((#s)|([^\\])[\\]([\\][\\])#)|((#s)|([^\\])([\\][\\])#)) /${match[2]:+$match[3]$match[4] }${match[5]:+$match[6]${(l:${#match[7]}/2::\\:):-} }}}
+                : ${(P)var::=${(P)var//(#b)(((#s)|([^\\])[\\]([\\][\\])#)|((#s)|([^\\])([\\][\\])#))  /${match[2]:+$match[3]$match[4]  }${match[5]:+$match[6]${(l:${#match[7]}/2::\\:):-} }}}
             }
             if [[ $a != *\** ]] { a=${a%%/##}"/*" }
             command mkdir -p ${~${(M)b:#/*}:-$ZPFX/$b}
